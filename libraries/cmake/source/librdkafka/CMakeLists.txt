@@ -3,12 +3,15 @@
 #
 # This source code is licensed in accordance with the terms specified in
 # the LICENSE file found in the root directory of this source tree.
+#    thirdparty_zlib
+#    thirdparty_zstd
 
 function(librdkafkaMain)
   generateLibrdkafka()
   generateLibrdkafkaxx()
 
   add_library(thirdparty_librdkafka INTERFACE)
+
 
   target_link_libraries(thirdparty_librdkafka INTERFACE
     thirdparty_librdkafka_c
@@ -78,6 +81,11 @@ function(generateLibrdkafka)
     "${library_root}/lz4hc.c"
     "${library_root}/rddl.c"
     "${library_root}/rdkafka_plugin.c"
+	"${library_root}/rdkafka_sasl_win32.c"
+	"${library_root}/rdkafka_sasl_scram.c"
+	"${library_root}/regexp.c"
+	"${library_root}/rdgz.c"
+	"${library_root}/rdkafka_zstd.c"
   )
 
   configure_file(
@@ -85,13 +93,31 @@ function(generateLibrdkafka)
     "${CMAKE_CURRENT_BINARY_DIR}/include/librdkafka/rdkafka.h"
     COPYONLY
   )
-
+  
   target_compile_definitions(thirdparty_librdkafka_c PRIVATE
     LIBRDKAFKA_GIT_VERSION=\"v1.0.1\"
+	LIBRDKAFKA_STATICLIB
+	WITH_ZSTD
+	WITH_ZSTD_STATIC
+	WITH_BUNDLED_ZSTD
+	WITH_SSL
+	WITH_ZLIB
+	WITH_PLUGINS
+	WITH_SASL_SCRAM
+	WITH_HDRHISTOGRAM
+	#i need a win32 cmake selector here
+	#WITHOUT_WIN32_CONFIG
+	#_RD_WIN32_CONFIG_H_
+	#WITHOUT_WIN32_CONFIG
   )
 
+
   target_link_libraries(thirdparty_librdkafka_c PUBLIC
-    thirdparty_openssl
+    thirdparty_openssl 
+	thirdparty_zlib
+    thirdparty_zstd
+	#i need a win32 cmake selector here
+
   )
 
   target_link_libraries(thirdparty_librdkafka_c PRIVATE
@@ -105,6 +131,7 @@ function(generateLibrdkafka)
 
   target_include_directories(thirdparty_librdkafka_c SYSTEM INTERFACE
     "${CMAKE_CURRENT_BINARY_DIR}/include"
+	"${CMAKE_CURRENT_SOURCE_DIR}/src/lib/common/"
   )
 endfunction()
 
@@ -138,11 +165,18 @@ function(generateLibrdkafkaxx)
 
   target_include_directories(thirdparty_librdkafka_cxx PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/config/dummy"
-    "${library_root}"
   )
+
+  #i need a win32 cmake selector here 
+  target_compile_definitions(thirdparty_librdkafka_cxx PUBLIC
+  LIBRDKAFKA_STATICLIB
+  )
+
 
   target_include_directories(thirdparty_librdkafka_cxx SYSTEM INTERFACE
     "${CMAKE_CURRENT_BINARY_DIR}/include"
+	#i need a win32 cmake selector here 
+	"${CMAKE_CURRENT_SOURCE_DIR}/../zstd/src/lib/common"
   )
 endfunction()
 
